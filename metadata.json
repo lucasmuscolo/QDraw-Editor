@@ -1,0 +1,5 @@
+{
+  "name": "QDraw Visual Editor",
+  "description": "A visual editor for the QDraw language. Create sequences of drawing and movement commands on a grid and watch them execute step-by-step.",
+  "requestFramePermissions": []
+}
