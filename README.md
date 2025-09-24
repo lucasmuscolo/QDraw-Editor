@@ -1,5 +1,8 @@
 # QDraw Visual Editor
 
+<img width="1377" height="808" alt="image" src="https://github.com/user-attachments/assets/f2c4d4d7-5690-435f-ad54-d83af2309beb" />
+
+
 ¡Bienvenido a QDraw Visual Editor! Una herramienta de programación visual diseñada para crear, probar y visualizar programas escritos en el lenguaje QDraw. Construye secuencias de comandos de dibujo y movimiento en un lienzo interactivo y observa cómo tu código cobra vida paso a paso.
 
 ## ¿Cómo Usar la Aplicación?
