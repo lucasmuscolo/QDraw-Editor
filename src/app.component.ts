@@ -22,6 +22,7 @@ interface RepeatCommand {
   type: 'repetir';
   veces: number;
   bloque: CommandNode[];
+  isClosedForEditing?: boolean;
 }
 
 interface SensorCondition {
@@ -34,6 +35,8 @@ interface ConditionalCommand {
   condicion: SensorCondition;
   bloque_entonces: CommandNode[];
   bloque_sino?: CommandNode[];
+  isThenClosedForEditing?: boolean;
+  isElseClosedForEditing?: boolean;
 }
 
 type CommandNode = PrimitiveCommand | ProcedureCommand | RepeatCommand | ConditionalCommand;
@@ -52,10 +55,13 @@ interface ProgramState {
   imports: [CommonModule],
 })
 export class AppComponent implements OnInit {
-  readonly gridSize = 16;
+  gridWidth = signal(7);
+  gridHeight = signal(7);
+  newGridWidth = signal(7);
+  newGridHeight = signal(7);
   
   grid = signal<Cell[][]>([]);
-  cursor = signal({ x: 0, y: 0 });
+  cursor = signal({ x: 0, y: 0 }); // (0,0) is bottom-left
   commandQueue = signal<CommandNode[]>([]);
   isExecuting = signal(false);
   codeContent = signal('');
@@ -67,7 +73,7 @@ export class AppComponent implements OnInit {
   procedureNames = computed(() => Array.from(this.procedures().keys()));
 
   // Loop-related signal
-  repeatCount = signal(3);
+  repeatCount = signal<number | null>(3);
 
   // Condition-related signals
   selectedCondition = signal<string | null>(null);
@@ -106,6 +112,13 @@ export class AppComponent implements OnInit {
     return this.findLastIfWithoutElse(this.commandQueue()) !== null;
   });
 
+  canCloseBlock = computed(() => {
+    const rootQueue = this.commandQueue();
+    if (rootQueue.length === 0) return false;
+    // A block can be closed if the target for new commands is not the root queue.
+    return this.findLastOpenBlock(rootQueue) !== rootQueue;
+  });
+
   ngOnInit() {
     this.resetGridAndCursor();
   }
@@ -115,12 +128,58 @@ export class AppComponent implements OnInit {
   }
 
   onRepeatCountChange(event: Event) {
-    const value = parseInt((event.target as HTMLInputElement).value, 10);
+    const rawValue = (event.target as HTMLInputElement).value;
+    if (rawValue === '') {
+      this.repeatCount.set(null);
+      return;
+    }
+    const value = parseInt(rawValue, 10);
     if (!isNaN(value) && value > 0) {
       this.repeatCount.set(value);
     } else {
+      // Treat invalid input (e.g., 'abc', '0', '-5') as empty
+      this.repeatCount.set(null);
+    }
+  }
+
+  onRepeatCountBlur(): void {
+    if (this.repeatCount() === null) {
       this.repeatCount.set(1);
     }
+  }
+
+  onWidthChange(event: Event) {
+    const value = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(value)) {
+      this.newGridWidth.set(value);
+    }
+  }
+
+  onHeightChange(event: Event) {
+    const value = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(value)) {
+      this.newGridHeight.set(value);
+    }
+  }
+
+  applyGridSize(): void {
+    if (this.isExecuting()) return;
+    const newWidth = this.newGridWidth();
+    const newHeight = this.newGridHeight();
+
+    // Clamp values to a reasonable range, e.g., 1 to 50
+    const saneWidth = Math.max(1, Math.min(50, newWidth));
+    const saneHeight = Math.max(1, Math.min(50, newHeight));
+    
+    this.gridWidth.set(saneWidth);
+    this.gridHeight.set(saneHeight);
+    
+    // Sync input signals with the sanitized values
+    this.newGridWidth.set(saneWidth);
+    this.newGridHeight.set(saneHeight);
+
+    // A full reset is the safest way to handle a grid change
+    this.resetAll();
   }
 
   private findLastOpenBlock(block: CommandNode[]): CommandNode[] {
@@ -128,17 +187,20 @@ export class AppComponent implements OnInit {
       return block;
     }
     const lastCommand = block[block.length - 1];
-    if (lastCommand.type === 'repetir') {
+
+    if (lastCommand.type === 'repetir' && !lastCommand.isClosedForEditing) {
       return this.findLastOpenBlock(lastCommand.bloque);
     } else if (lastCommand.type === 'condicional') {
-      // If an else block exists, it's the most recent open block
-      if (lastCommand.bloque_sino !== undefined) {
-          return this.findLastOpenBlock(lastCommand.bloque_sino);
+      // Priority to 'else' block if it exists and is open
+      if (lastCommand.bloque_sino !== undefined && !lastCommand.isElseClosedForEditing) {
+        return this.findLastOpenBlock(lastCommand.bloque_sino);
       }
-      // Otherwise, it's the 'then' block
-      return this.findLastOpenBlock(lastCommand.bloque_entonces);
+      // Only descend into 'then' if 'else' does NOT exist and 'then' is open.
+      if (lastCommand.bloque_sino === undefined && !lastCommand.isThenClosedForEditing) {
+        return this.findLastOpenBlock(lastCommand.bloque_entonces);
+      }
     }
-    return block;
+    return block; // If no open structure found, return current block
   }
 
   addCommandToQueue(commandName: string): void {
@@ -168,7 +230,7 @@ export class AppComponent implements OnInit {
 
     const repeatNode: RepeatCommand = {
       type: 'repetir',
-      veces: this.repeatCount(),
+      veces: this.repeatCount() ?? 1,
       bloque: [],
     };
 
@@ -248,6 +310,44 @@ export class AppComponent implements OnInit {
     return null;
   }
 
+  private findAndCloseDeepestBlock(block: CommandNode[]): boolean {
+    if (block.length === 0) return false;
+
+    const last = block[block.length - 1] as RepeatCommand | ConditionalCommand;
+
+    if (last.type === 'repetir' && !last.isClosedForEditing) {
+        const closedDeeper = this.findAndCloseDeepestBlock(last.bloque);
+        if (closedDeeper) return true;
+        last.isClosedForEditing = true;
+        return true;
+    } else if (last.type === 'condicional') {
+        if (last.bloque_sino !== undefined && !last.isElseClosedForEditing) {
+            const closedDeeper = this.findAndCloseDeepestBlock(last.bloque_sino);
+            if (closedDeeper) return true;
+            last.isElseClosedForEditing = true;
+            return true;
+        }
+        if (last.bloque_sino === undefined && !last.isThenClosedForEditing) {
+            const closedDeeper = this.findAndCloseDeepestBlock(last.bloque_entonces);
+            if (closedDeeper) return true;
+            last.isThenClosedForEditing = true;
+            return true;
+        }
+    }
+    return false;
+  }
+
+  closeBlock(): void {
+    if (this.isExecuting() || !this.canCloseBlock()) return;
+
+    this.commandQueue.update(queue => {
+        const newQueue = JSON.parse(JSON.stringify(queue));
+        this.findAndCloseDeepestBlock(newQueue);
+        return newQueue;
+    });
+    this.updateCodeEditor();
+  }
+
   defineNewProcedure(): void {
     if (this.isExecuting() || this.isProcedureNameInvalid() || this.commandQueue().length === 0) {
         return;
@@ -282,6 +382,7 @@ export class AppComponent implements OnInit {
             // If the else block is now empty, remove it to "undo" adding it
             else {
                 delete lastCommand.bloque_sino;
+                delete (lastCommand as any).isElseClosedForEditing;
                 return true;
             }
         }
@@ -296,11 +397,30 @@ export class AppComponent implements OnInit {
     return true;
   }
 
+  private openAllBlocks(block: CommandNode[]): void {
+    block.forEach(node => {
+        const mutableNode = node as RepeatCommand | ConditionalCommand;
+        if (mutableNode.type === 'repetir') {
+            mutableNode.isClosedForEditing = false;
+            this.openAllBlocks(mutableNode.bloque);
+        } else if (mutableNode.type === 'condicional') {
+            mutableNode.isThenClosedForEditing = false;
+            mutableNode.isElseClosedForEditing = false;
+            this.openAllBlocks(mutableNode.bloque_entonces);
+            if (mutableNode.bloque_sino) {
+                this.openAllBlocks(mutableNode.bloque_sino);
+            }
+        }
+    });
+  }
+
   deleteLastCommand(): void {
     if (this.isExecuting()) return;
     this.commandQueue.update(queue => {
         const newQueue = JSON.parse(JSON.stringify(queue));
         this.deleteLastCommandRecursive(newQueue);
+        // After deleting, re-open all blocks. This is predictable for the user.
+        this.openAllBlocks(newQueue);
         return newQueue;
     });
     this.updateCodeEditor();
@@ -344,9 +464,9 @@ export class AppComponent implements OnInit {
 
   resetGridAndCursor(): void {
     const newGrid: Cell[][] = [];
-    for (let y = 0; y < this.gridSize; y++) {
+    for (let y = 0; y < this.gridHeight(); y++) {
       const row: Cell[] = [];
-      for (let x = 0; x < this.gridSize; x++) {
+      for (let x = 0; x < this.gridWidth(); x++) {
         row.push({ x, y, color: 'transparent' });
       }
       newGrid.push(row);
@@ -361,7 +481,8 @@ export class AppComponent implements OnInit {
 
   private evaluarCondicion(condicion: SensorCondition): boolean {
     const { x, y } = this.cursor();
-    const cell = this.grid()[y][x];
+    const visualY = this.gridHeight() - 1 - y;
+    const cell = this.grid()[visualY][x];
 
     switch (condicion.nombre) {
         case 'estaVacia?':
@@ -428,7 +549,7 @@ export class AppComponent implements OnInit {
     const cursor = this.cursor();
     switch (name) {
       case 'MoverDerecha':
-        if (cursor.x < this.gridSize - 1) {
+        if (cursor.x < this.gridWidth() - 1) {
           this.cursor.set({ ...cursor, x: cursor.x + 1 });
         } else {
           await this.handleBoundaryError();
@@ -442,15 +563,15 @@ export class AppComponent implements OnInit {
         }
         break;
       case 'MoverAbajo':
-        if (cursor.y < this.gridSize - 1) {
-          this.cursor.set({ ...cursor, y: cursor.y + 1 });
+        if (cursor.y > 0) {
+          this.cursor.set({ ...cursor, y: cursor.y - 1 });
         } else {
           await this.handleBoundaryError();
         }
         break;
       case 'MoverArriba':
-        if (cursor.y > 0) {
-          this.cursor.set({ ...cursor, y: cursor.y - 1 });
+        if (cursor.y < this.gridHeight() - 1) {
+          this.cursor.set({ ...cursor, y: cursor.y + 1 });
         } else {
           await this.handleBoundaryError();
         }
@@ -474,7 +595,8 @@ export class AppComponent implements OnInit {
   private async handleBoundaryError(): Promise<void> {
     this.showErrorMessage('Error: Movimiento fuera de límites');
     const { x, y } = this.cursor();
-    const originalColor = this.grid()[y][x].color;
+    const visualY = this.gridHeight() - 1 - y;
+    const originalColor = this.grid()[visualY][x].color;
     this.paintCell(x, y, '#f87171'); // red-400
     await this.delay(300);
     this.paintCell(x, y, originalColor);
@@ -490,10 +612,11 @@ export class AppComponent implements OnInit {
   }
 
   private paintCell(x: number, y: number, color: string): void {
+    const visualY = this.gridHeight() - 1 - y;
     this.grid.update(currentGrid => {
       const newGrid = currentGrid.map(row => [...row]);
-      if (newGrid[y] && newGrid[y][x]) {
-        newGrid[y][x] = { ...newGrid[y][x], color: color };
+      if (newGrid[visualY] && newGrid[visualY][x]) {
+        newGrid[visualY][x] = { ...newGrid[visualY][x], color: color };
       }
       return newGrid;
     });
@@ -501,7 +624,8 @@ export class AppComponent implements OnInit {
 
   isCursorAt(x: number, y: number): boolean {
     const c = this.cursor();
-    return c.x === x && c.y === y;
+    const visualCursorY = this.gridHeight() - 1 - c.y;
+    return c.x === x && visualCursorY === y;
   }
 
   // --- File Modal and I/O Logic ---
@@ -575,7 +699,8 @@ export class AppComponent implements OnInit {
                 case '#ef4444': char = 'R'; break; // Rojo
                 case '#22c55e': char = 'V'; break; // Verde
             }
-            if (cursor.x === x && cursor.y === y) {
+            const visualCursorY = this.gridHeight() - 1 - cursor.y;
+            if (cursor.x === x && visualCursorY === y) {
                 rowStr += `[${char}]`;
             } else {
                 rowStr += ` ${char} `;

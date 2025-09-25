@@ -1,8 +1,5 @@
 # QDraw Visual Editor
 
-<img width="1377" height="808" alt="image" src="https://github.com/user-attachments/assets/f2c4d4d7-5690-435f-ad54-d83af2309beb" />
-
-
 ¡Bienvenido a QDraw Visual Editor! Una herramienta de programación visual diseñada para crear, probar y visualizar programas escritos en el lenguaje QDraw. Construye secuencias de comandos de dibujo y movimiento en un lienzo interactivo y observa cómo tu código cobra vida paso a paso.
 
 ## ¿Cómo Usar la Aplicación?
@@ -54,7 +51,7 @@ Aquí es donde construirás tu programa. Simplemente haz clic en los botones par
 Aquí es donde visualizas el resultado de tu programa.
 
 #### Lienzo de Dibujo
-- Un lienzo de 16x16 celdas.
+- Un lienzo de 7x7 celdas.
 - El recuadro azul cian representa el **cursor**, que indica la posición actual.
 - Durante la ejecución, verás cómo el cursor se mueve y pinta en el lienzo según las instrucciones de tu programa.
 
