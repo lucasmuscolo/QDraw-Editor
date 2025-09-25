@@ -54,7 +54,8 @@
         <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Estructuras</h3>
         <div class="flex flex-col gap-2">
           <div class="flex items-center gap-2">
-            <input type="number" id="repeat-count" min="1" [value]="repeatCount()" (input)="onRepeatCountChange($event)"
+            <input type="number" id="repeat-count" min="1" [value]="repeatCount() ?? ''" (input)="onRepeatCountChange($event)"
+              (blur)="onRepeatCountBlur()"
               [disabled]="isExecuting()"
               class="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white disabled:bg-gray-900 disabled:cursor-not-allowed" />
             <button id="add-repeat-button" (click)="addRepeatBlock()" [disabled]="isExecuting()"
@@ -72,6 +73,10 @@
               Añadir Sino
             </button>
           </div>
+          <button (click)="closeBlock()" [disabled]="isExecuting() || !canCloseBlock()"
+            class="w-full px-3 py-2 text-sm font-medium text-center text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-amber-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200">
+            Cerrar Bloque
+          </button>
         </div>
       </div>
     </div>
@@ -119,9 +124,12 @@
   <!-- Right Panel: Canvas and Code Editor -->
   <main id="main-content" class="flex-1 p-4 flex flex-row gap-4 overflow-hidden">
     <!-- Preview Canvas -->
-    <div class="flex-shrink-0">
-      <div id="canvas" class="aspect-square w-[200px] h-[200px] bg-gray-700 border-2 border-gray-600 shadow-xl"
-        style="display: grid; grid-template-columns: repeat(16, 1fr);">
+    <div class="flex-shrink-0 flex flex-col items-center">
+      <div id="canvas" class="bg-gray-700 border-2 border-gray-600 shadow-xl"
+        [style.display]="'grid'"
+        [style.grid-template-columns]="'repeat(' + gridWidth() + ', 1fr)'"
+        [style.width.px]="gridWidth() * 30"
+        [style.height.px]="gridHeight() * 30">
         @for (row of grid(); track $index) {
         @for (cell of row; track cell.x) {
         <div class="cell w-full h-full border-r border-b border-gray-600 transition-all duration-150"
@@ -129,9 +137,32 @@
         }
         }
       </div>
+
+       <!-- Grid Size Controls -->
+       <div class="mt-4 flex items-end justify-center gap-3" [style.width.px]="gridWidth() * 30">
+        <div class="flex-1">
+          <label for="grid-width" class="block text-xs text-gray-400 mb-1 text-center">Columnas</label>
+          <input type="number" id="grid-width" min="1" max="50" [value]="newGridWidth()" (input)="onWidthChange($event)"
+            [disabled]="isExecuting()"
+            class="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white text-center disabled:bg-gray-900 disabled:cursor-not-allowed">
+        </div>
+        <div class="text-gray-400 text-lg font-bold">×</div>
+        <div class="flex-1">
+          <label for="grid-height" class="block text-xs text-gray-400 mb-1 text-center">Filas</label>
+          <input type="number" id="grid-height" min="1" max="50" [value]="newGridHeight()" (input)="onHeightChange($event)"
+            [disabled]="isExecuting()"
+            class="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white text-center disabled:bg-gray-900 disabled:cursor-not-allowed">
+        </div>
+        <button (click)="applyGridSize()" [disabled]="isExecuting()"
+          class="px-4 py-1 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-sky-800 disabled:cursor-not-allowed transition-colors duration-200">
+          Aplicar
+        </button>
+      </div>
+      
       @if (errorMessage()) {
       <div
-        class="mt-2 p-2 bg-red-900/50 border border-red-700 rounded-md text-red-300 text-sm text-center w-[200px] transition-opacity duration-300">
+        class="mt-2 p-2 bg-red-900/50 border border-red-700 rounded-md text-red-300 text-sm text-center transition-opacity duration-300"
+        [style.width.px]="gridWidth() * 30">
         {{ errorMessage() }}
       </div>
       }
@@ -164,6 +195,30 @@
         Cargar Sesión (.json)
       </button>
       <input type="file" #fileInput id="file-input" accept=".json,application/json" (change)="loadFile($event)" class="hidden">
+    </div>
+  </div>
+</div>
+}
+
+<!-- Export Preview Modal -->
+@if (isExportPreviewModalOpen()) {
+<div id="export-preview-modal" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl border border-gray-700 relative flex flex-col" style="height: 60vh; max-height: 90vh;">
+    <h2 class="text-2xl font-bold text-cyan-400 mb-4 text-center flex-shrink-0">Previsualizar y Exportar</h2>
+    <div class="flex-1 overflow-hidden">
+      <textarea 
+        class="w-full h-full bg-gray-900 text-cyan-300 font-mono text-sm p-4 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+        [value]="exportPreviewContent()" 
+        (input)="onPreviewContentChange($event)">
+      </textarea>
+    </div>
+    <div class="mt-6 flex justify-end gap-4 flex-shrink-0">
+      <button (click)="cancelExportPreview()" class="px-6 py-2 font-bold text-gray-300 bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+        Cancelar
+      </button>
+      <button (click)="savePreviewedTxt()" class="px-6 py-2 font-bold text-white bg-teal-600 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-200">
+        Guardar
+      </button>
     </div>
   </div>
 </div>
