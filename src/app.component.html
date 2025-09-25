@@ -199,3 +199,27 @@
   </div>
 </div>
 }
+
+<!-- Export Preview Modal -->
+@if (isExportPreviewModalOpen()) {
+<div id="export-preview-modal" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 p-4">
+  <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl border border-gray-700 relative flex flex-col" style="height: 60vh; max-height: 90vh;">
+    <h2 class="text-2xl font-bold text-cyan-400 mb-4 text-center flex-shrink-0">Previsualizar y Exportar</h2>
+    <div class="flex-1 overflow-hidden">
+      <textarea 
+        class="w-full h-full bg-gray-900 text-cyan-300 font-mono text-sm p-4 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"
+        [value]="exportPreviewContent()" 
+        (input)="onPreviewContentChange($event)">
+      </textarea>
+    </div>
+    <div class="mt-6 flex justify-end gap-4 flex-shrink-0">
+      <button (click)="cancelExportPreview()" class="px-6 py-2 font-bold text-gray-300 bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+        Cancelar
+      </button>
+      <button (click)="savePreviewedTxt()" class="px-6 py-2 font-bold text-white bg-teal-600 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-200">
+        Guardar
+      </button>
+    </div>
+  </div>
+</div>
+}

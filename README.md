@@ -14,7 +14,7 @@ Aquí es donde construirás tu programa. Simplemente haz clic en los botones par
 
 #### 1. Mis Procedimientos
 - **Descripción:** Una vez que defines un procedimiento (un conjunto de comandos guardado con un nombre), aparecerá en esta sección.
-- **Uso:** Haz clic en el nombre de un procedimiento para añadir una llamada a ese procedimiento en tu programa principal. Esto te permite reutilizar código de forma sencilla.
+- **Uso:** Haz clic en el nombre de un procedimiento para añadir una llamada a ese procedimiento en tu programa principal. Esto te permite reutilizar código de forma sencilla. La llamada en el código generado aparecerá como `NombreDelProcedimiento();`.
 
 #### 2. Comandos y Movimiento
 - **Pintar (Negro, Rojo, Verde):** Pinta la celda actual donde se encuentra el cursor con el color seleccionado.
@@ -57,7 +57,7 @@ Aquí es donde visualizas el resultado de tu programa.
 
 #### Generated Code
 - Un editor de texto de solo lectura que muestra el código QDraw correspondiente al programa visual que has creado.
-- Se actualiza en tiempo real a medida que añades, eliminas o anidas comandos. Es una excelente forma de aprender la sintaxis del lenguaje QDraw.
+- Se actualiza en tiempo real a medida que añades, eliminas o anidas comandos. Es una excelente forma de aprender la sintaxis del lenguaje QDraw. Por ejemplo, una llamada a un procedimiento se verá como `MiProcedimiento();`.
 
 ---
 

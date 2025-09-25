@@ -86,6 +86,8 @@ export class AppComponent implements OnInit {
 
   // Modal state
   isModalOpen = signal(false);
+  isExportPreviewModalOpen = signal(false);
+  exportPreviewContent = signal('');
 
   commandGroups = [
     {
@@ -444,7 +446,8 @@ export class AppComponent implements OnInit {
     let code = '';
     for (const command of queue) {
         if (command.type === 'primitiva' || command.type === 'procedimiento') {
-            code += `${indent}${command.nombre};\n`;
+            const commandName = command.type === 'procedimiento' ? `${command.nombre}()` : command.nombre;
+            code += `${indent}${commandName};\n`;
         } else if (command.type === 'repetir') {
             code += `${indent}repetir ${command.veces} veces {\n`;
             code += this.generateCodeFromQueue(command.bloque, indentLevel + 1);
@@ -657,8 +660,13 @@ export class AppComponent implements OnInit {
     const programCode = this.generateProgramString();
     const gridState = this.generateGridString();
     const fullContent = `${programCode}\n\n${gridState}`;
+    this.exportPreviewContent.set(fullContent);
+    this.isExportPreviewModalOpen.set(true);
+  }
 
-    const blob = new Blob([fullContent], { type: 'text/plain' });
+  savePreviewedTxt(): void {
+    const content = this.exportPreviewContent();
+    const blob = new Blob([content], { type: 'text/plain' });
     const url = window.URL.createObjectURL(blob);
     
     const a = document.createElement('a');
@@ -667,7 +675,17 @@ export class AppComponent implements OnInit {
     a.click();
     
     window.URL.revokeObjectURL(url);
+    
+    this.isExportPreviewModalOpen.set(false);
     this.toggleModal(false);
+  }
+
+  cancelExportPreview(): void {
+    this.isExportPreviewModalOpen.set(false);
+  }
+  
+  onPreviewContentChange(event: Event): void {
+    this.exportPreviewContent.set((event.target as HTMLTextAreaElement).value);
   }
 
   private generateProgramString(): string {
@@ -676,7 +694,7 @@ export class AppComponent implements OnInit {
     programCode += '}\n\n';
 
     this.procedures().forEach((body, name) => {
-        programCode += `procedimiento ${name} {\n`;
+        programCode += `procedimiento ${name}() {\n`;
         programCode += this.generateCodeFromQueue(body, 1);
         programCode += '}\n\n';
     });
