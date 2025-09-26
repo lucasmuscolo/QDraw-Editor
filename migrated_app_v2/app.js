@@ -160,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
         dom.canvasContainer.style.gridTemplateColumns = `repeat(${state.gridWidth}, 1fr)`;
         dom.canvasContainer.style.width = `${state.gridWidth * 30}px`;
         dom.canvasContainer.style.height = `${state.gridHeight * 30}px`;
-        dom.gridControlsContainer.style.width = `${state.gridWidth * 30}px`;
 
         const visualCursorY = state.gridHeight - 1 - state.cursor.y;
 
