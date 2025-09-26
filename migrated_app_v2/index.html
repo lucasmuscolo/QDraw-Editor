@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QDraw Static</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans">
+  <div id="app-container" class="flex flex-col md:flex-row h-screen">
+    <!-- Left Panel: Palette -->
+    <aside class="w-full md:w-80 bg-gray-800 shadow-lg flex-shrink-0 flex flex-col border-r border-gray-700">
+      <!-- Scrollable content area -->
+      <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+        <header class="text-center">
+          <h1 class="text-2xl font-bold text-cyan-400">QDraw Editor</h1>
+          <p class="text-sm text-gray-400">Build your visual program</p>
+        </header>
+
+        <!-- Procedures Section (Dynamically Populated) -->
+        <div id="procedures-section" class="hidden">
+          <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Mis Procedimientos</h3>
+          <div id="procedures-container" class="grid grid-cols-1 gap-2">
+            <!-- Procedure buttons will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Commands Section -->
+        <div id="commands-section">
+          <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Comandos</h3>
+          <div id="commands-container" class="grid grid-cols-1 gap-2">
+            <!-- Command buttons will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Movement Section -->
+        <div id="movement-section">
+          <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Movimiento</h3>
+          <div id="movement-container" class="grid grid-cols-1 gap-2">
+            <!-- Movement buttons will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Conditions Section -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Condiciones</h3>
+          <div id="conditions-container" class="grid grid-cols-1 gap-2">
+            <!-- Condition buttons will be inserted here -->
+          </div>
+        </div>
+
+        <!-- Structures Section -->
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Estructuras</h3>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center gap-2">
+              <input type="number" id="repeat-count-input" min="1" value="3" class="w-20 px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white disabled:bg-gray-900 disabled:cursor-not-allowed" />
+              <button id="add-repeat-button" class="flex-1 px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200">
+                Añadir Repetir
+              </button>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="add-if-button" class="flex-1 px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200">
+                Añadir Si
+              </button>
+              <button id="add-else-button" class="flex-1 px-3 py-2 text-sm font-medium text-center text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200">
+                Añadir Sino
+              </button>
+            </div>
+            <button id="close-block-button" class="w-full px-3 py-2 text-sm font-medium text-center text-white bg-amber-600 rounded-md hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:bg-amber-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-colors duration-200">
+              Cerrar Bloque
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fixed control area -->
+      <div class="flex-shrink-0 p-4 border-t border-gray-700">
+        <h3 class="text-lg font-semibold mb-3 text-gray-300 border-b border-gray-600 pb-1">Control</h3>
+
+        <div class="flex flex-col gap-2 mb-4">
+          <input type="text" id="procedure-name-input" placeholder="NombreDelProcedimiento" class="w-full px-3 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white placeholder-gray-400 disabled:bg-gray-900 disabled:cursor-not-allowed" />
+          <button id="define-procedure-button" class="w-full px-4 py-1 font-medium text-white bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:bg-purple-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200">
+            Definir Procedimiento
+          </button>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <button id="run-button" class="w-full px-4 py-2 font-bold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-green-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200">
+            <span id="run-button-text">Ejecutar</span>
+          </button>
+          <button id="delete-last-command-button" class="w-full px-4 py-1 font-medium text-white bg-orange-600 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:bg-orange-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors duration-200">
+            Borrar
+          </button>
+          <button id="reset-button" class="w-full px-4 py-1 font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:bg-red-800 disabled:cursor-not-allowed transition-colors duration-200">
+            Resetear
+          </button>
+          <button id="file-modal-button" class="w-full px-4 py-1 font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-sky-800 disabled:cursor-not-allowed transition-colors duration-200">
+            Archivos
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Panel: Canvas and Code Editor -->
+    <main id="main-content" class="flex-1 p-4 flex flex-row gap-4 overflow-hidden">
+      <!-- Preview Canvas -->
+      <div class="flex-shrink-0 flex flex-col items-center">
+        <div id="canvas-container" class="bg-gray-700 border-2 border-gray-600 shadow-xl">
+          <!-- Grid cells will be inserted here -->
+        </div>
+
+        <!-- Grid Size Controls -->
+        <div id="grid-controls-container" class="mt-4 flex items-end justify-center gap-3">
+          <div class="flex-1">
+            <label for="grid-width-input" class="block text-xs text-gray-400 mb-1 text-center">Columnas</label>
+            <input type="number" id="grid-width-input" min="1" max="50" value="7" class="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white text-center disabled:bg-gray-900 disabled:cursor-not-allowed">
+          </div>
+          <div class="text-gray-400 text-lg font-bold">×</div>
+          <div class="flex-1">
+            <label for="grid-height-input" class="block text-xs text-gray-400 mb-1 text-center">Filas</label>
+            <input type="number" id="grid-height-input" min="1" max="50" value="7" class="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-cyan-500 text-white text-center disabled:bg-gray-900 disabled:cursor-not-allowed">
+          </div>
+          <button id="apply-grid-size-button" class="px-4 py-1 text-sm font-medium text-white bg-sky-600 rounded-md hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-sky-500 disabled:bg-sky-800 disabled:cursor-not-allowed transition-colors duration-200">
+            Aplicar
+          </button>
+        </div>
+
+        <div id="error-message-container" class="mt-2 p-2 bg-red-900/50 border border-red-700 rounded-md text-red-300 text-sm text-center transition-opacity duration-300 hidden">
+          <!-- Error messages will appear here -->
+        </div>
+      </div>
+
+      <!-- Code Editor -->
+      <div class="flex-1 flex flex-col bg-gray-800 rounded-lg shadow-inner overflow-hidden">
+        <h4 class="text-md font-semibold text-gray-300 p-4 pb-2 border-b border-gray-700 flex-shrink-0">Generated Code</h4>
+        <div class="p-4 overflow-auto">
+          <pre id="code-editor" class="text-cyan-300 font-mono text-sm whitespace-pre-wrap"></pre>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- File I/O Modal -->
+  <div id="file-modal" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 hidden">
+    <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm border border-gray-700 relative">
+      <button id="close-file-modal-button" class="absolute top-3 right-3 text-gray-400 hover:text-white text-2xl leading-none">&times;</button>
+      <h2 class="text-2xl font-bold text-cyan-400 mb-6 text-center">Archivos</h2>
+      <div class="flex flex-col gap-4">
+        <button id="save-session-button" class="w-full px-4 py-3 font-bold text-white bg-blue-600 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200">
+          Guardar Sesión (.json)
+        </button>
+        <button id="export-txt-button" class="w-full px-4 py-3 font-bold text-white bg-teal-600 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-200">
+          Exportar a Texto (.txt)
+        </button>
+        <button id="load-session-button" class="w-full px-4 py-3 font-bold text-white bg-purple-600 rounded-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors duration-200">
+          Cargar Sesión (.json)
+        </button>
+        <input type="file" id="file-input" accept=".json,application/json" class="hidden">
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Preview Modal -->
+  <div id="export-preview-modal" class="fixed inset-0 bg-gray-900/80 flex items-center justify-center z-50 p-4 hidden">
+    <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-2xl border border-gray-700 relative flex flex-col" style="height: 60vh; max-height: 90vh;">
+      <h2 class="text-2xl font-bold text-cyan-400 mb-4 text-center flex-shrink-0">Previsualizar y Exportar</h2>
+      <div class="flex-1 overflow-hidden">
+        <textarea id="export-preview-textarea" class="w-full h-full bg-gray-900 text-cyan-300 font-mono text-sm p-4 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none"></textarea>
+      </div>
+      <div class="mt-6 flex justify-end gap-4 flex-shrink-0">
+        <button id="cancel-export-preview-button" class="px-6 py-2 font-bold text-gray-300 bg-gray-600 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors duration-200">
+          Cancelar
+        </button>
+        <button id="save-previewed-txt-button" class="px-6 py-2 font-bold text-white bg-teal-600 rounded-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors duration-200">
+          Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

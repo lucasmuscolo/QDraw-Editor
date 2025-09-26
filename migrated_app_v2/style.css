@@ -1,0 +1,6 @@
+/* Custom styles will go here. */
+.cursor {
+  outline: 2px solid #38bdf8; /* light-blue-400 */
+  outline-offset: -2px;
+  box-shadow: inset 0 0 0 2px #1e293b; /* slate-800 */
+}
