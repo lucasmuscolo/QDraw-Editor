@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let code = '';
         for (const command of queue) {
             if (command.type === 'primitiva' || command.type === 'procedimiento') {
-                code += `${indent}${command.type === 'procedimiento' ? `${command.nombre}()` : command.nombre};\n`;
+                code += `${indent}${command.type === 'procedimiento' ? `${command.nombre}()` : command.nombre}\n`;
             } else if (command.type === 'repetir') {
                 code += `${indent}repetir ${command.veces} veces {\n`;
                 code += generateCodeFromQueue(command.bloque, indentLevel + 1);
